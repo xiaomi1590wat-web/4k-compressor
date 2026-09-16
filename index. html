@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4K TikTok Video Compressor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .card { background: #1e1e1e; padding: 30px; border-radius: 16px; width: 100%; max-width: 480px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    h1 { font-size: 22px; margin-bottom: 8px; color: #fe2c55; }
+    p { font-size: 14px; color: #aaa; margin-bottom: 20px; }
+    input[type="file"] { display: none; }
+    .upload-btn { background: #fe2c55; color: #fff; padding: 12px 24px; border-radius: 8px; cursor: pointer; display: inline-block; font-weight: bold; margin-bottom: 15px; }
+    #status { font-size: 14px; margin-top: 15px; color: #25f4ee; word-break: break-all; }
+    .download-link { display: none; margin-top: 20px; padding: 12px 20px; background: #25f4ee; color: #000; font-weight: bold; text-decoration: none; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>4K TikTok Compressor</h1>
+    <p>4K keyfiyyəti qorumaqla videonu sıxın.</p>
+    <label class="upload-btn" for="videoInput">4K Video Seç</label>
+    <input type="file" id="videoInput" accept="video/*">
+    <div id="status">Sistem hazırlanır...</div>
+    <a id="downloadBtn" class="download-link" download="4k_compressed.mp4">Sıxılmış Videonu Yüklə</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <script>
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+    const statusText = document.getElementById('status');
+    const videoInput = document.getElementById('videoInput');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    async function initFFmpeg() {
+      statusText.innerText = "FFmpeg yüklənir...";
+      await ffmpeg.load();
+      statusText.innerText = "Hazırdır! 4K videonu seçin.";
+    }
+
+    videoInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      downloadBtn.style.display = 'none';
+      statusText.innerText = "Video sıxılır, gözləyin...";
+      ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+      await ffmpeg.run('-i', 'input.mp4', '-c:v', 'libx264', '-crf', '22', '-preset', 'ultrafast', '-c:a', 'aac', '-b:a', '192k', 'output.mp4');
+      const data = ffmpeg.FS('readFile', 'output.mp4');
+      const videoUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+      statusText.innerText = "Sıxılma tamamlandı!";
+      downloadBtn.href = videoUrl;
+      downloadBtn.style.display = 'inline-block';
+    });
+    initFFmpeg();
+  </script>
+</body>
+</html>
